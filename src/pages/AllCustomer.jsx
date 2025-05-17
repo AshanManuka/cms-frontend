@@ -64,7 +64,7 @@ const AllCustomers = () => {
   return (
     <div style={{ display: 'flex', padding: '20px' }}>
       <div style={{ width: '40%', borderRight: '1px solid #ccc', paddingRight: '20px' }}>
-        <h2>All Customers</h2>
+        <h2 style={{ fontWeight: '900' }}>All Customers</h2>
         {customers.length === 0 ? (
           <p>No customers found.</p>
         ) : (
@@ -85,7 +85,7 @@ const AllCustomers = () => {
       <div style={{ width: '60%', paddingLeft: '20px' }}>
         {selectedCustomer ? (
           <div>
-            <h2>Customer Details</h2>
+            <h2 style={{ fontWeight: '900' }}>Customer Details</h2>
 
             {isEditing ? (
               <div>
@@ -185,7 +185,7 @@ const AllCustomers = () => {
                   ))}
                 </ul>
 
-                <button onClick={() => handleUpdateClick(selectedCustomer.id)}>Update</button>
+                <button style={{backgroundColor: '#e9c9ff', border: '1px solid', borderRadius:'5px', padding:'5px', fontWeight:'700', width:'40vw'}} onClick={() => handleUpdateClick(selectedCustomer.id)}>Update</button>
               </div>
             )}
           </div>

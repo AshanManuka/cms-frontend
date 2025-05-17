@@ -141,7 +141,7 @@ const EditCustomer = () => {
 
   return (
     <div className="container mt-4">
-      <h2 style={{ fontWeight: '900' }}>Edit Customer</h2>
+      <h2 style={{ fontWeight: '900' }}>Update Customer</h2>
       <div className="row">
         <div className="col-md-7">
           <form onSubmit={handleSubmit}>
