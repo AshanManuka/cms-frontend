@@ -1,9 +1,12 @@
 import React, { useState, useEffect } from 'react';
+import { useParams } from 'react-router-dom';
 import axios from 'axios';
 import 'bootstrap/dist/css/bootstrap.min.css';
 
-const RegisterCustomer = () => {
+const EditCustomer = () => {
+  const { customerId } = useParams();
   const [formData, setFormData] = useState({
+    id: '',
     name: '',
     dob: '',
     nic: '',
@@ -18,23 +21,54 @@ const RegisterCustomer = () => {
   const [countries, setCountries] = useState([]);
   const [citiesByCountry, setCitiesByCountry] = useState({});
 
-
   useEffect(() => {
     axios.get('http://localhost:8080/customer/all')
       .then(res => {
-        console.log(res.data.body);
         setAllCustomers(res.data.body);
-      })
-      .catch(err => console.error(err));
+      }).catch(console.error);
 
-      axios.get('http://localhost:8080/customer/get-countries')
+    axios.get('http://localhost:8080/customer/get-countries')
       .then(res => {
-        console.log(res.data.body);
         setCountries(res.data.body);
-      })
-      .catch(err => console.error(err));
+      }).catch(console.error);
 
-  }, []);
+    axios.get(`http://localhost:8080/customer/single?customerId=${customerId}`)
+    .then(res => {
+        const data = res.data.body;
+      
+        const memberIds = data.memberList?.map(member => member.id) || [];
+      
+        const updatedAddresses = data.addressList?.map(address => {
+          // const country = countries.find(c => c.name === address.countryName);
+          // const countryId = country?.id || '';
+      
+          // const cityList = citiesByCountry[countryId] || [];
+          // const city = cityList.find(city => city.name === address.cityName);
+          // const cityId = city?.id || '';
+
+          const countryId = 1;
+          const cityId = 1;
+      
+          return {
+            lineOne: address.lineOne || '',
+            lineTwo: address.lineTwo || '',
+            cityId,
+            countryId
+          };
+        }) || [{ lineOne: '', lineTwo: '', cityId: '', countryId: '' }];
+      
+        setFormData({
+          id: data.id,
+          name: data.name || '',
+          dob: data.dob?.split('T')[0] || '',
+          nic: data.nic || '',
+          mobileNumber: data.mobileNumber?.length ? data.mobileNumber : [''],
+          memberList: memberIds,
+          addressList: updatedAddresses
+        });
+      })
+      .catch(console.error);
+  }, [customerId]);
 
   useEffect(() => {
     const result = allCustomers.filter(c =>
@@ -43,16 +77,6 @@ const RegisterCustomer = () => {
     );
     setFilteredCustomers(result);
   }, [search, allCustomers]);
-
-  const addToMemberList = (id) => {
-    if (!formData.memberList.includes(id)) {
-      setFormData({ ...formData, memberList: [...formData.memberList, id] });
-    }
-  };
-
-  const removeFromMemberList = (id) => {
-    setFormData({ ...formData, memberList: formData.memberList.filter(mid => mid !== id) });
-  };
 
   const handleChange = (e, index, field, listName) => {
     const updatedList = [...formData[listName]];
@@ -68,13 +92,11 @@ const RegisterCustomer = () => {
 
   const handleCountryChange = async (e, index) => {
     const selectedCountryId = e.target.value;
-  
     const updatedAddresses = [...formData.addressList];
     updatedAddresses[index].countryId = selectedCountryId;
     updatedAddresses[index].cityId = '';
-  
     setFormData({ ...formData, addressList: updatedAddresses });
-  
+
     if (!citiesByCountry[selectedCountryId]) {
       try {
         const res = await axios.get(`http://localhost:8080/customer/cities-by-country?countryId=${selectedCountryId}`);
@@ -84,7 +106,6 @@ const RegisterCustomer = () => {
       }
     }
   };
-  
 
   const addAddress = () => {
     setFormData({
@@ -97,44 +118,54 @@ const RegisterCustomer = () => {
     setFormData({ ...formData, mobileNumber: [...formData.mobileNumber, ''] });
   };
 
+  const addToMemberList = (id) => {
+    if (!formData.memberList.includes(id)) {
+      setFormData({ ...formData, memberList: [...formData.memberList, id] });
+    }
+  };
+
+  const removeFromMemberList = (id) => {
+    setFormData({ ...formData, memberList: formData.memberList.filter(mid => mid !== id) });
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      await axios.post('http://localhost:8080/customer/register', formData);
-      alert('Customer registered successfully!');
+      await axios.put(`http://localhost:8080/customer/update`, formData);
+      alert('Customer updated successfully!');
     } catch (error) {
       console.error(error);
-      alert('Error while registering customer.');
+      alert('Error while updating customer.');
     }
   };
 
   return (
     <div className="container mt-4">
-      <h2 style={{fontWeight: '900'}}>Register Customer</h2>
+      <h2 style={{ fontWeight: '900' }}>Edit Customer</h2>
       <div className="row">
-
         <div className="col-md-7">
           <form onSubmit={handleSubmit}>
+        
             <div className="mb-3">
-              <label style={{fontWeight: '700'}}>Name:</label>
+              <label>Name:</label>
               <input type="text" className="form-control" value={formData.name}
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })} required />
             </div>
 
             <div className="mb-3">
-              <label style={{fontWeight: '700'}}>Date of Birth:</label>
+              <label>Date of Birth:</label>
               <input type="date" className="form-control" value={formData.dob}
                 onChange={(e) => setFormData({ ...formData, dob: e.target.value })} required />
             </div>
 
             <div className="mb-3">
-              <label style={{fontWeight: '700'}}>NIC:</label>
+              <label>NIC:</label>
               <input type="text" className="form-control" value={formData.nic}
                 onChange={(e) => setFormData({ ...formData, nic: e.target.value })} required />
             </div>
 
             <div className="mb-3">
-              <label style={{fontWeight: '700'}}>Mobile Numbers:</label>
+              <label>Mobile Numbers:</label>
               {formData.mobileNumber.map((number, index) => (
                 <input key={index} type="text" className="form-control mb-2" value={number}
                   onChange={(e) => handleMobileChange(e, index)} required />
@@ -143,7 +174,7 @@ const RegisterCustomer = () => {
             </div>
 
             <div className="mb-3">
-              <label style={{fontWeight: '700'}}>Addresses:</label>
+              <label>Addresses:</label>
               {formData.addressList.map((address, index) => (
                 <div key={index} className="border p-3 mb-2 rounded bg-light">
                   <input type="text" className="form-control mb-2" placeholder="Line One"
@@ -152,38 +183,33 @@ const RegisterCustomer = () => {
                     value={address.lineTwo} onChange={(e) => handleChange(e, index, 'lineTwo', 'addressList')} />
                   <select className="form-control mb-2"
                     value={address.countryId}
-                    onChange={(e) => handleCountryChange(e, index)}
-                    required
-                    >
+                    onChange={(e) => handleCountryChange(e, index)} required>
                     <option value="">Select Country</option>
                     {countries.map(country => (
-                        <option key={country.id} value={country.id}>{country.name}</option>
+                      <option key={country.id} value={country.id}>{country.name}</option>
                     ))}
-                    </select>
-
-                    <select className="form-control"
+                  </select>
+                  <select className="form-control"
                     value={address.cityId}
-                    onChange={(e) => handleChange(e, index, 'cityId', 'addressList')}
-                    required
-                    >
+                    onChange={(e) => handleChange(e, index, 'cityId', 'addressList')} required>
                     <option value="">Select City</option>
                     {(citiesByCountry[address.countryId] || []).map(city => (
-                        <option key={city.id} value={city.id}>{city.name}</option>
+                      <option key={city.id} value={city.id}>{city.name}</option>
                     ))}
-                    </select>
-
+                  </select>
                 </div>
               ))}
               <button type="button" className="btn btn-secondary mt-1" onClick={addAddress}>+ Add Address</button>
             </div>
 
-            <button style={{fontWeight: '700', backgroundColor: '#01382b', border:'0', width: '40vw'}} type="submit" className="btn btn-primary">Register</button>
+            <button style={{ fontWeight: '700', backgroundColor: '#01382b', border: '0', width: '40vw' }}
+              type="submit" className="btn btn-primary">Update</button>
           </form>
         </div>
 
         <div className="col-md-5">
           <div className="mb-3">
-            <label style={{fontWeight: '700'}}>Search Customers (to add as Family Members):</label>
+            <label>Search Customers (to update Family Members):</label>
             <input type="text" className="form-control" placeholder="Search by name or NIC"
               value={search} onChange={(e) => setSearch(e.target.value)} />
           </div>
@@ -202,7 +228,7 @@ const RegisterCustomer = () => {
           </ul>
 
           <div className="mt-3">
-            <h6 style={{fontWeight: '700'}}>Selected Member IDs:</h6>
+            <h6>Selected Member IDs:</h6>
             <p>{formData.memberList.join(', ') || 'None'}</p>
           </div>
         </div>
@@ -211,4 +237,4 @@ const RegisterCustomer = () => {
   );
 };
 
-export default RegisterCustomer;
+export default EditCustomer;
